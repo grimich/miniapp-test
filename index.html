@@ -36,23 +36,34 @@
   // Capture all URL parameters
   urlParams.forEach((v,k) => dataToShow[k] = v);
 
-  // Add default fields
+  // Default redirect & clickunder
   dataToShow.redirectedTo = urlParams.get('redirect') || 'https://ya.ru';
   dataToShow.clickunderOpened = urlParams.get('clickunder') || null;
   dataToShow.timestamp = new Date().toISOString();
 
-  // Simulate Telegram user info
-  dataToShow.user = {
-    id: urlParams.get('uid') || '',
-    username: 'Unknown',
-    language_code: 'unknown'
-  };
+  // Telegram Web App data (initData & themeParams)
+  if (window.Telegram?.WebApp) {
+    const tg = window.Telegram.WebApp;
+    dataToShow.user = tg.initDataUnsafe?.user || {};
+    dataToShow.initData = tg.initData || '';
+    dataToShow.themeParams = tg.themeParams || {};
+  } else {
+    // fallback for browser testing
+    dataToShow.user = {
+      id: urlParams.get('uid') || '',
+      username: urlParams.get('username') || 'Unknown',
+      language_code: urlParams.get('lang') || 'unknown'
+    };
+    dataToShow.initData = '';
+    dataToShow.themeParams = {};
+  }
 
   // Display all data
   document.getElementById('allData').textContent = JSON.stringify(dataToShow, null, 2);
 
-  // Prepare payload for your Mini App Web App (Sheets)
+  // Prepare payload for Google Sheets
   const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxZ54JvG-PkixmQO8V_5xenov1QzbjakwGq5f7uH6kz5nccj5RP3DNL0tk1WC0VvzZoXw/exec";
+  
   try {
     await fetch(SHEETS_URL, {
       method: "POST",
