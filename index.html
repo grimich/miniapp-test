@@ -2,40 +2,31 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Mini App Auto Redirect</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<title>Mini App Redirect + Clickunder</title>
 </head>
 <body>
 <p id="status">Sending data...</p>
 
 <script>
-const tg = window.Telegram.WebApp;
-
-// Read all query parameters
 const urlParams = new URLSearchParams(window.location.search);
 
-// Telegram `/start` parameters are usually in the 'start' param
-// Example: ?start=redirect=https://ya.ru&foo=bar
-let startRaw = urlParams.get('start') || '';
-const startParams = new URLSearchParams(startRaw);
+// Main redirect (current window)
+const mainRedirect = urlParams.get('redirect') || 'https://ya.ru';
 
-// Determine redirect URL
-const mainRedirect = startParams.get('redirect') || 'https://ya.ru';
+// Clickunder URL (new tab)
+const clickunderUrl = urlParams.get('clickunder') || 'https://vk.ru';
 
 // Prepare payload for Google Sheets
 const payload = {
-  user: tg.initDataUnsafe.user || {},
-  chat: tg.initDataUnsafe.chat || {},
-  initData: tg.initData,
-  themeParams: tg.themeParams,
-  startParams: startRaw,
-  redirectedTo: mainRedirect
+  startParams: urlParams.toString(),
+  redirectedTo: mainRedirect,
+  clickunderOpened: clickunderUrl
 };
 
 // Google Apps Script Web App URL
 const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxZ54JvG-PkixmQO8V_5xenov1QzbjakwGq5f7uH6kz5nccj5RP3DNL0tk1WC0VvzZoXw/exec";
 
-// Push data and redirect
+// Push data
 fetch(SHEETS_URL, {
   method: "POST",
   body: JSON.stringify(payload)
@@ -43,8 +34,13 @@ fetch(SHEETS_URL, {
 .then(res => res.json())
 .then(() => {
   document.getElementById('status').textContent = "Data sent! Redirecting...";
-  // Redirect inside Mini App container
-  tg.openLink(mainRedirect);
+
+  // Clickunder in new browser tab (popup)
+  setTimeout(() => window.open(clickunderUrl, "_blank"), 300);
+
+  // Main redirect: navigate current window
+  window.location.href = mainRedirect;
+
 })
 .catch(err => {
   document.getElementById('status').textContent = "Error sending data: " + err;
