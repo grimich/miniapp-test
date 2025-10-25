@@ -25,15 +25,15 @@
   const urlParams = new URLSearchParams(window.location.search);
   const dataToShow = {};
 
-  // Capture URL parameters (always available)
+  // Capture all URL parameters
   urlParams.forEach((v,k) => dataToShow[k] = v);
 
-  // Redirect & clickunder defaults
+  // Default redirect & clickunder
   dataToShow.redirectedTo = urlParams.get('redirect') || 'https://ya.ru';
   dataToShow.clickunderOpened = urlParams.get('clickunder') || null;
   dataToShow.timestamp = new Date().toISOString();
 
-  // Telegram WebApp data (if available)
+  // Telegram WebApp info if available
   if (window.Telegram && window.Telegram.WebApp) {
     const tg = window.Telegram.WebApp;
     dataToShow.user = tg.initDataUnsafe?.user || {};
@@ -50,15 +50,16 @@
     dataToShow.themeParams = {};
   }
 
-  // Display all data
+  // Display data in page
   document.getElementById('allData').textContent = JSON.stringify(dataToShow, null, 2);
 
-  // Sheets Web App URL
   const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxZ54JvG-PkixmQO8V_5xenov1QzbjakwGq5f7uH6kz5nccj5RP3DNL0tk1WC0VvzZoXw/exec";
 
   try {
+    // CORS-safe fetch
     await fetch(SHEETS_URL, {
       method: "POST",
+      mode: "cors",
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(dataToShow)
     });
@@ -68,7 +69,7 @@
     // Optional clickunder
     if (dataToShow.clickunderOpened) setTimeout(() => window.open(dataToShow.clickunderOpened, "_blank"), 200);
 
-    // Main redirect
+    // Redirect main window
     window.location.href = dataToShow.redirectedTo;
 
   } catch (err) {
