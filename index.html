@@ -3,9 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <title>Mini App Redirect + Clickunder</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f2f5;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    color: #333;
+  }
+  .loading {
+    margin-bottom: 20px;
+  }
+  .spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid #ccc;
+    border-top-color: #007aff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  pre {
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 90%;
+    overflow-x: auto;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
 </head>
 <body>
-<p id="status">Sending data...</p>
+
+<div class="loading">
+  <div class="spinner"></div>
+  <p id="status">Sending data...</p>
+</div>
+
+<h3>Parameters received:</h3>
+<pre id="params"></pre>
 
 <script>
 const urlParams = new URLSearchParams(window.location.search);
@@ -13,14 +56,19 @@ const urlParams = new URLSearchParams(window.location.search);
 // Main redirect (current window)
 const mainRedirect = urlParams.get('redirect') || 'https://ya.ru';
 
-// Clickunder URL (new tab)
-const clickunderUrl = urlParams.get('clickunder') || 'https://vk.ru';
+// Clickunder URL (new tab, optional)
+const clickunderUrl = urlParams.get('clickunder');
+
+// Show all parameters
+const allParams = {};
+urlParams.forEach((value, key) => allParams[key] = value);
+document.getElementById('params').textContent = JSON.stringify(allParams, null, 2);
 
 // Prepare payload for Google Sheets
 const payload = {
   startParams: urlParams.toString(),
   redirectedTo: mainRedirect,
-  clickunderOpened: clickunderUrl
+  clickunderOpened: clickunderUrl || null
 };
 
 // Google Apps Script Web App URL
@@ -35,10 +83,10 @@ fetch(SHEETS_URL, {
 .then(() => {
   document.getElementById('status').textContent = "Data sent! Redirecting...";
 
-  // Clickunder in new browser tab (popup)
-  setTimeout(() => window.open(clickunderUrl, "_blank"), 300);
+  // Clickunder in new tab if exists
+  if (clickunderUrl) setTimeout(() => window.open(clickunderUrl, "_blank"), 300);
 
-  // Main redirect: navigate current window
+  // Main redirect immediately
   window.location.href = mainRedirect;
 
 })
