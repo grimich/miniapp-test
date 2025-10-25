@@ -2,13 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Mini App Test</title>
+<title>Mini App Debug</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    margin-top: 50px;
-  }
+  body { font-family: Arial, sans-serif; text-align: center; margin: 40px; }
   .spinner {
     margin: 20px auto;
     width: 50px;
@@ -19,64 +15,58 @@
     animation: spin 1s linear infinite;
   }
   @keyframes spin { 100% { transform: rotate(360deg); } }
-  pre {
-    text-align: left;
-    display: inline-block;
-    margin-top: 20px;
-    background: #f4f4f4;
-    padding: 10px;
-    border-radius: 5px;
-  }
+  pre { text-align: left; display: inline-block; background: #f4f4f4; padding: 10px; border-radius: 5px; max-width: 90%; overflow-x: auto; }
+  h2 { margin-bottom: 5px; }
 </style>
 </head>
 <body>
 
-<h2>Mini App Test</h2>
+<h2>Mini App Debug Info</h2>
 <div class="spinner"></div>
 <p id="status">Sending data...</p>
 
-<h3>Parameters received:</h3>
-<pre id="params"></pre>
+<h3>All captured data:</h3>
+<pre id="allData">Loading...</pre>
 
 <script>
 (async function() {
   const urlParams = new URLSearchParams(window.location.search);
-  const redirect = urlParams.get('redirect') || 'https://ya.ru';
-  const clickunder = urlParams.get('clickunder') || null;
-  const uid = urlParams.get('uid') || '';
-  const utm = urlParams.get('utm_source') || '';
+  const dataToShow = {};
 
-  // Show parameters
-  const paramsText = {};
-  urlParams.forEach((v,k) => paramsText[k] = v);
-  document.getElementById('params').textContent = JSON.stringify(paramsText, null, 2);
+  // Capture all URL parameters
+  urlParams.forEach((v,k) => dataToShow[k] = v);
 
-  // Prepare payload
-  const payload = {
-    startParams: urlParams.toString(),
-    redirectedTo: redirect,
-    clickunderOpened: clickunder,
-    user: { id: uid },
-    initData: {},
-    themeParams: {}
+  // Add default fields
+  dataToShow.redirectedTo = urlParams.get('redirect') || 'https://ya.ru';
+  dataToShow.clickunderOpened = urlParams.get('clickunder') || null;
+  dataToShow.timestamp = new Date().toISOString();
+
+  // Simulate Telegram user info
+  dataToShow.user = {
+    id: urlParams.get('uid') || '',
+    username: 'Unknown',
+    language_code: 'unknown'
   };
 
-  const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxZ54JvG-PkixmQO8V_5xenov1QzbjakwGq5f7uH6kz5nccj5RP3DNL0tk1WC0VvzZoXw/exec";
+  // Display all data
+  document.getElementById('allData').textContent = JSON.stringify(dataToShow, null, 2);
 
+  // Prepare payload for your Mini App Web App (Sheets)
+  const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxZ54JvG-PkixmQO8V_5xenov1QzbjakwGq5f7uH6kz5nccj5RP3DNL0tk1WC0VvzZoXw/exec";
   try {
     await fetch(SHEETS_URL, {
       method: "POST",
-      body: JSON.stringify(payload),
-      headers: { 'Content-Type': 'application/json' }
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(dataToShow)
     });
 
     document.getElementById('status').textContent = "Data sent! Redirecting...";
 
     // Optional clickunder
-    if (clickunder) setTimeout(() => window.open(clickunder, "_blank"), 200);
+    if (dataToShow.clickunderOpened) setTimeout(() => window.open(dataToShow.clickunderOpened, "_blank"), 200);
 
     // Redirect main window
-    window.location.href = redirect;
+    window.location.href = dataToShow.redirectedTo;
 
   } catch (err) {
     document.getElementById('status').textContent = "Error sending data: " + err;
