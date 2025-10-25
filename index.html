@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Telegram Mini App - Show Redirect & Params</title>
+<title>Mini App Clickunder Example</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-  body { font-family: sans-serif; padding: 20px; background:#f8f9fa; color:#333; }
+  body { font-family: sans-serif; padding: 20px; background:#f0f0f0; color:#333; }
   h1 { margin-bottom: 10px; }
   pre { background:#fff; padding:10px; border-radius:6px; overflow-x:auto; }
 </style>
@@ -13,21 +13,21 @@
 <body>
 
 <h1>Mini App Info</h1>
-<p>Redirect URL:</p>
+<p>Redirect URL (will open automatically):</p>
 <pre id="redirect"></pre>
 
 <p>All URL Parameters:</p>
 <pre id="params"></pre>
 
-<p id="status">Sending data to Google Sheets...</p>
+<p id="status">Sending data...</p>
 
 <script>
 const tg = window.Telegram.WebApp;
 
-// Parse URL parameters
+// Parse query parameters
 const urlParams = new URLSearchParams(window.location.search);
 
-// Redirect URL
+// The page to redirect inside Mini App
 const redirectUrl = urlParams.get('redirect') || 'https://ya.ru';
 document.getElementById('redirect').textContent = redirectUrl;
 
@@ -36,28 +36,29 @@ const allParams = {};
 urlParams.forEach((value, key) => allParams[key] = value);
 document.getElementById('params').textContent = JSON.stringify(allParams, null, 2);
 
-// Prepare payload for Google Sheets
+// Payload to Google Sheets
 const payload = {
   user: tg.initDataUnsafe.user || {},
   chat: tg.initDataUnsafe.chat || {},
   initData: tg.initData,
   themeParams: tg.themeParams,
-  startParams: urlParams.toString(), // the parameters from the Telegram deep link
+  startParams: urlParams.toString(),
   redirectedTo: redirectUrl
 };
 
 // Google Apps Script Web App URL
 const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxZ54JvG-PkixmQO8V_5xenov1QzbjakwGq5f7uH6kz5nccj5RP3DNL0tk1WC0VvzZoXw/exec";
 
-// Push to Google Sheets and redirect immediately
+// Push data and automatically open redirect inside Mini App
 fetch(SHEETS_URL, {
   method: "POST",
   body: JSON.stringify(payload)
 })
 .then(res => res.json())
 .then(() => {
-  document.getElementById('status').textContent = "Data sent! Redirecting...";
-  tg.openLink(redirectUrl); // opens in full-screen Web App mode inside Telegram
+  document.getElementById('status').textContent = "Data sent! Opening page...";
+  // "Clickunder" redirect inside Mini App
+  tg.openLink(redirectUrl);
 })
 .catch(err => {
   document.getElementById('status').textContent = "Error sending data: " + err;
