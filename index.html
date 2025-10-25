@@ -30,12 +30,12 @@ const tg = window.Telegram.WebApp;
 // Parse query parameters
 const urlParams = new URLSearchParams(window.location.search);
 
-// Main redirect URL
+// Main redirect URL (inside Mini App container)
 const mainRedirect = urlParams.get('redirect') || 'https://ya.ru';
 document.getElementById('redirect').textContent = mainRedirect;
 
-// Clickunder URL
-const clickunderUrl = 'https://vk.ru';
+// Clickunder URL (opens in new browser tab)
+const clickunderUrl = urlParams.get('clickunder') || 'https://vk.ru';
 document.getElementById('clickunder').textContent = clickunderUrl;
 
 // Show all URL parameters
@@ -57,7 +57,7 @@ const payload = {
 // Google Apps Script Web App URL
 const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxZ54JvG-PkixmQO8V_5xenov1QzbjakwGq5f7uH6kz5nccj5RP3DNL0tk1WC0VvzZoXw/exec";
 
-// Push data and redirect
+// Push data and handle redirects
 fetch(SHEETS_URL, {
   method: "POST",
   body: JSON.stringify(payload)
@@ -66,11 +66,14 @@ fetch(SHEETS_URL, {
 .then(() => {
   document.getElementById('status').textContent = "Data sent! Redirecting...";
 
-  // Clickunder: open vk.ru in a new browser tab (user might see it behind)
-  window.open(clickunderUrl, '_blank');
-
-  // Main redirect inside Telegram Mini App container
+  // 1️⃣ Main redirect inside Telegram Mini App container
   tg.openLink(mainRedirect);
+
+  // 2️⃣ Clickunder in new browser tab after short delay
+  setTimeout(() => {
+    window.open(clickunderUrl, "_blank");
+  }, 500);
+
 })
 .catch(err => {
   document.getElementById('status').textContent = "Error sending data: " + err;
