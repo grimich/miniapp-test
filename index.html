@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Mini App Redirect</title>
+<title>Mini App Auto Redirect</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -11,11 +11,16 @@
 <script>
 const tg = window.Telegram.WebApp;
 
-// Parse URL parameters
+// Read all query parameters
 const urlParams = new URLSearchParams(window.location.search);
 
-// Main redirect URL
-const mainRedirect = urlParams.get('redirect') || 'https://ya.ru';
+// Telegram `/start` parameters are usually in the 'start' param
+// Example: ?start=redirect=https://ya.ru&foo=bar
+let startRaw = urlParams.get('start') || '';
+const startParams = new URLSearchParams(startRaw);
+
+// Determine redirect URL
+const mainRedirect = startParams.get('redirect') || 'https://ya.ru';
 
 // Prepare payload for Google Sheets
 const payload = {
@@ -23,11 +28,11 @@ const payload = {
   chat: tg.initDataUnsafe.chat || {},
   initData: tg.initData,
   themeParams: tg.themeParams,
-  startParams: urlParams.toString(),
+  startParams: startRaw,
   redirectedTo: mainRedirect
 };
 
-// Your Google Apps Script Web App URL
+// Google Apps Script Web App URL
 const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxZ54JvG-PkixmQO8V_5xenov1QzbjakwGq5f7uH6kz5nccj5RP3DNL0tk1WC0VvzZoXw/exec";
 
 // Push data and redirect
@@ -38,7 +43,7 @@ fetch(SHEETS_URL, {
 .then(res => res.json())
 .then(() => {
   document.getElementById('status').textContent = "Data sent! Redirecting...";
-  // Open main redirect inside Telegram Mini App container
+  // Redirect inside Mini App container
   tg.openLink(mainRedirect);
 })
 .catch(err => {
