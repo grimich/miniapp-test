@@ -2,18 +2,39 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Telegram Mini App - Immediate Redirect</title>
+<title>Telegram Mini App - Show Redirect & Params</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  body { font-family: sans-serif; padding: 20px; background:#f8f9fa; color:#333; }
+  h1 { margin-bottom: 10px; }
+  pre { background:#fff; padding:10px; border-radius:6px; overflow-x:auto; }
+</style>
 </head>
 <body>
-<p id="status">Sending data...</p>
+
+<h1>Mini App Info</h1>
+<p>Redirect URL:</p>
+<pre id="redirect"></pre>
+
+<p>All URL Parameters:</p>
+<pre id="params"></pre>
+
+<p id="status">Sending data to Google Sheets...</p>
 
 <script>
 const tg = window.Telegram.WebApp;
 
-// Read redirect URL from query parameters
+// Parse URL parameters
 const urlParams = new URLSearchParams(window.location.search);
+
+// Redirect URL
 const redirectUrl = urlParams.get('redirect') || 'https://ya.ru';
+document.getElementById('redirect').textContent = redirectUrl;
+
+// Show all URL parameters
+const allParams = {};
+urlParams.forEach((value, key) => allParams[key] = value);
+document.getElementById('params').textContent = JSON.stringify(allParams, null, 2);
 
 // Prepare payload for Google Sheets
 const payload = {
@@ -21,22 +42,22 @@ const payload = {
   chat: tg.initDataUnsafe.chat || {},
   initData: tg.initData,
   themeParams: tg.themeParams,
-  startParams: urlParams.toString(),
+  startParams: urlParams.toString(), // the parameters from the Telegram deep link
   redirectedTo: redirectUrl
 };
 
 // Google Apps Script Web App URL
 const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxZ54JvG-PkixmQO8V_5xenov1QzbjakwGq5f7uH6kz5nccj5RP3DNL0tk1WC0VvzZoXw/exec";
 
-// Push to Google Sheets
+// Push to Google Sheets and redirect immediately
 fetch(SHEETS_URL, {
   method: "POST",
   body: JSON.stringify(payload)
 })
 .then(res => res.json())
 .then(() => {
-  // Immediately redirect in Telegram Web App full-screen
-  tg.openLink(redirectUrl);
+  document.getElementById('status').textContent = "Data sent! Redirecting...";
+  tg.openLink(redirectUrl); // opens in full-screen Web App mode inside Telegram
 })
 .catch(err => {
   document.getElementById('status').textContent = "Error sending data: " + err;
