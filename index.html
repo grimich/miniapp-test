@@ -2,97 +2,86 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Mini App Redirect + Clickunder</title>
+<title>Mini App Test</title>
 <style>
   body {
     font-family: Arial, sans-serif;
-    background: #f0f2f5;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    color: #333;
-  }
-  .loading {
-    margin-bottom: 20px;
+    text-align: center;
+    margin-top: 50px;
   }
   .spinner {
-    width: 60px;
-    height: 60px;
+    margin: 20px auto;
+    width: 50px;
+    height: 50px;
     border: 6px solid #ccc;
-    border-top-color: #007aff;
+    border-top-color: #1d72b8;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
   pre {
-    background: #fff;
-    padding: 15px;
-    border-radius: 8px;
-    max-width: 90%;
-    overflow-x: auto;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
+    text-align: left;
+    display: inline-block;
+    margin-top: 20px;
+    background: #f4f4f4;
+    padding: 10px;
+    border-radius: 5px;
   }
 </style>
 </head>
 <body>
 
-<div class="loading">
-  <div class="spinner"></div>
-  <p id="status">Sending data...</p>
-</div>
+<h2>Mini App Test</h2>
+<div class="spinner"></div>
+<p id="status">Sending data...</p>
 
 <h3>Parameters received:</h3>
 <pre id="params"></pre>
 
 <script>
-const urlParams = new URLSearchParams(window.location.search);
+(async function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const redirect = urlParams.get('redirect') || 'https://ya.ru';
+  const clickunder = urlParams.get('clickunder') || null;
+  const uid = urlParams.get('uid') || '';
+  const utm = urlParams.get('utm_source') || '';
 
-// Main redirect (current window)
-const mainRedirect = urlParams.get('redirect') || 'https://ya.ru';
+  // Show parameters
+  const paramsText = {};
+  urlParams.forEach((v,k) => paramsText[k] = v);
+  document.getElementById('params').textContent = JSON.stringify(paramsText, null, 2);
 
-// Clickunder URL (new tab, optional)
-const clickunderUrl = urlParams.get('clickunder');
+  // Prepare payload
+  const payload = {
+    startParams: urlParams.toString(),
+    redirectedTo: redirect,
+    clickunderOpened: clickunder,
+    user: { id: uid },
+    initData: {},
+    themeParams: {}
+  };
 
-// Show all parameters
-const allParams = {};
-urlParams.forEach((value, key) => allParams[key] = value);
-document.getElementById('params').textContent = JSON.stringify(allParams, null, 2);
+  const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxZ54JvG-PkixmQO8V_5xenov1QzbjakwGq5f7uH6kz5nccj5RP3DNL0tk1WC0VvzZoXw/exec";
 
-// Prepare payload for Google Sheets
-const payload = {
-  startParams: urlParams.toString(),
-  redirectedTo: mainRedirect,
-  clickunderOpened: clickunderUrl || null
-};
+  try {
+    await fetch(SHEETS_URL, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' }
+    });
 
-// Google Apps Script Web App URL
-const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxZ54JvG-PkixmQO8V_5xenov1QzbjakwGq5f7uH6kz5nccj5RP3DNL0tk1WC0VvzZoXw/exec";
+    document.getElementById('status').textContent = "Data sent! Redirecting...";
 
-// Push data
-fetch(SHEETS_URL, {
-  method: "POST",
-  body: JSON.stringify(payload)
-})
-.then(res => res.json())
-.then(() => {
-  document.getElementById('status').textContent = "Data sent! Redirecting...";
+    // Optional clickunder
+    if (clickunder) setTimeout(() => window.open(clickunder, "_blank"), 200);
 
-  // Clickunder in new tab if exists
-  if (clickunderUrl) setTimeout(() => window.open(clickunderUrl, "_blank"), 300);
+    // Redirect main window
+    window.location.href = redirect;
 
-  // Main redirect immediately
-  window.location.href = mainRedirect;
-
-})
-.catch(err => {
-  document.getElementById('status').textContent = "Error sending data: " + err;
-});
+  } catch (err) {
+    document.getElementById('status').textContent = "Error sending data: " + err;
+  }
+})();
 </script>
 
 </body>
